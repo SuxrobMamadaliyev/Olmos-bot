@@ -9,6 +9,7 @@ const {
   supportHandler,
 } = require('./menuHandler');
 const {
+  isAdmin,
   adminPanelHandler,
   adminBackAction,
   adminStatsAction,
@@ -18,6 +19,10 @@ const {
   adminPendingAction,
   adminApproveAction,
   adminRejectAction,
+  adminBanAction,
+  adminUnbanAction,
+  adminPaymentsChannelAction,
+  adminReferralRewardAction,
   adminBroadcastAction,
   adminUsersAction,
   pendingHandler,
@@ -25,17 +30,45 @@ const {
   rejectHandler,
   broadcastHandler,
 } = require('./adminHandler');
+const User = require('./User');
 const withdrawScene = require('./withdrawScene');
 const addChannelScene = require('./addChannelScene');
 const broadcastScene = require('./broadcastScene');
+const banScene = require('./banScene');
+const unbanScene = require('./unbanScene');
+const changePaymentsChannelScene = require('./changePaymentsChannelScene');
+const changeReferralRewardScene = require('./changeReferralRewardScene');
 const { mainMenu } = require('./keyboards');
 
 function createBot() {
   const bot = new Telegraf(process.env.BOT_TOKEN);
 
-  const stage = new Scenes.Stage([withdrawScene, addChannelScene, broadcastScene]);
+  const stage = new Scenes.Stage([
+    withdrawScene,
+    addChannelScene,
+    broadcastScene,
+    banScene,
+    unbanScene,
+    changePaymentsChannelScene,
+    changeReferralRewardScene,
+  ]);
   bot.use(session());
   bot.use(stage.middleware());
+
+  // Bloklangan foydalanuvchilarni botdan foydalanishdan to'xtatish
+  bot.use(async (ctx, next) => {
+    if (!ctx.from || isAdmin(ctx.from.id)) return next();
+
+    const user = await User.findOne({ telegramId: ctx.from.id });
+    if (user && user.isBlocked) {
+      if (ctx.callbackQuery) {
+        return ctx.answerCbQuery('🚫 Siz botdan foydalanishdan bloklangansiz.', { show_alert: true });
+      }
+      return ctx.reply('🚫 Siz botdan foydalanishdan bloklangansiz.');
+    }
+
+    return next();
+  });
 
   // /start va referal
   bot.start(startHandler);
@@ -60,6 +93,10 @@ function createBot() {
   bot.action('admin_pending', adminPendingAction);
   bot.action(/^admin_approve_(.+)$/, adminApproveAction);
   bot.action(/^admin_reject_(.+)$/, adminRejectAction);
+  bot.action('admin_ban', adminBanAction);
+  bot.action('admin_unban', adminUnbanAction);
+  bot.action('admin_payments_channel', adminPaymentsChannelAction);
+  bot.action('admin_referral_reward', adminReferralRewardAction);
   bot.action('admin_broadcast', adminBroadcastAction);
   bot.action('admin_users', adminUsersAction);
 
