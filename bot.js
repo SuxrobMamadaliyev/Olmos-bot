@@ -10,18 +10,30 @@ const {
 } = require('./menuHandler');
 const {
   adminPanelHandler,
+  adminBackAction,
+  adminStatsAction,
+  adminChannelsAction,
+  adminChannelAddAction,
+  adminChannelDeleteAction,
+  adminPendingAction,
+  adminApproveAction,
+  adminRejectAction,
+  adminBroadcastAction,
+  adminUsersAction,
   pendingHandler,
   approveHandler,
   rejectHandler,
   broadcastHandler,
 } = require('./adminHandler');
 const withdrawScene = require('./withdrawScene');
+const addChannelScene = require('./addChannelScene');
+const broadcastScene = require('./broadcastScene');
 const { mainMenu } = require('./keyboards');
 
 function createBot() {
   const bot = new Telegraf(process.env.BOT_TOKEN);
 
-  const stage = new Scenes.Stage([withdrawScene]);
+  const stage = new Scenes.Stage([withdrawScene, addChannelScene, broadcastScene]);
   bot.use(session());
   bot.use(stage.middleware());
 
@@ -38,8 +50,20 @@ function createBot() {
   bot.hears('🏦 Almazni yechish', (ctx) => ctx.scene.enter('withdrawScene'));
   bot.hears('◀️ Orqaga', (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu));
 
-  // Admin buyruqlari
+  // Admin buyrug'i va inline panel
   bot.command('admin', adminPanelHandler);
+  bot.action('admin_back', adminBackAction);
+  bot.action('admin_stats', adminStatsAction);
+  bot.action('admin_channels', adminChannelsAction);
+  bot.action('admin_channel_add', adminChannelAddAction);
+  bot.action(/^admin_channel_del_(.+)$/, adminChannelDeleteAction);
+  bot.action('admin_pending', adminPendingAction);
+  bot.action(/^admin_approve_(.+)$/, adminApproveAction);
+  bot.action(/^admin_reject_(.+)$/, adminRejectAction);
+  bot.action('admin_broadcast', adminBroadcastAction);
+  bot.action('admin_users', adminUsersAction);
+
+  // Eski matnli admin buyruqlari (moslik uchun saqlangan)
   bot.command('pending', pendingHandler);
   bot.command('broadcast', broadcastHandler);
   bot.hears(/^\/approve_/, approveHandler);
