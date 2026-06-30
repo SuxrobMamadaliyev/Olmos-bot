@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 
 const mainMenu = Markup.keyboard([
-  ['💎 Almaz Ishlash', '💰 Hisobim'],
+  ['💎 Ishlash', '💰 Hisobim'],
   ['🏦 Almazni yechish', '📚 Qo\'llanma'],
   ['📣 To\'lovlar kanali', '📧 Murojaat'],
 ]).resize();
