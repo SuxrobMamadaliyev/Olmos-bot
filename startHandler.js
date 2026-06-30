@@ -1,8 +1,7 @@
 const User = require('./User');
 const { mainMenu, subscribeKeyboard } = require('./keyboards');
 const { checkAllSubscriptions } = require('./subscription');
-
-const REFERRAL_REWARD = Number(process.env.REFERRAL_REWARD || 250);
+const { getSettings } = require('./settingsUtils');
 
 async function startHandler(ctx) {
   const telegramId = ctx.from.id;
@@ -73,8 +72,9 @@ async function grantReferralRewardIfNeeded(user) {
   const referrer = await User.findOne({ telegramId: user.referredBy });
   if (!referrer) return;
 
-  referrer.balance += REFERRAL_REWARD;
-  referrer.totalEarned += REFERRAL_REWARD;
+  const settings = await getSettings();
+  referrer.balance += settings.referralReward;
+  referrer.totalEarned += settings.referralReward;
   referrer.referralsCount += 1;
   await referrer.save();
 
