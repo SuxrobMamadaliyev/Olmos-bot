@@ -1,19 +1,15 @@
 const User = require('./User');
+const { getSettings } = require('./settingsUtils');
 
 const BOT_USERNAME = process.env.BOT_USERNAME;
-const REFERRAL_REWARD = Number(process.env.REFERRAL_REWARD || 250);
-const PAYMENTS_CHANNEL = process.env.PAYMENTS_CHANNEL || REQUIRED_CHANNEL_FALLBACK();
 const SUPPORT_USERNAME = process.env.SUPPORT_USERNAME || 'admin';
 
-function REQUIRED_CHANNEL_FALLBACK() {
-  return process.env.REQUIRED_CHANNEL || 'your_channel';
-}
-
 async function earnHandler(ctx) {
+  const settings = await getSettings();
   const referralLink = `https://t.me/${BOT_USERNAME}?start=${ctx.from.id}`;
   return ctx.reply(
     `💎 Almaz ishlash\n\n🔗 Sizning referal havolangiz:👇\n\n${referralLink}\n\n` +
-      `⚡️Yuqoridagi referal havolangizni do'stlaringizga tarqating va har bir to'liq ro'yxatdan o'tgan referalingiz uchun ${REFERRAL_REWARD} 💎 hisobingizga qo'shiladi.✅`
+      `⚡️Yuqoridagi referal havolangizni do'stlaringizga tarqating va har bir to'liq ro'yxatdan o'tgan referalingiz uchun ${settings.referralReward} 💎 hisobingizga qo'shiladi.✅`
   );
 }
 
@@ -38,18 +34,20 @@ async function balanceHandler(ctx) {
 }
 
 async function guideHandler(ctx) {
+  const settings = await getSettings();
   return ctx.reply(
     `📚 Qo'llanma\n\n` +
       `1️⃣ "💎 Ishlash" tugmasi orqali referal havolangizni oling.\n` +
       `2️⃣ Havolani do'stlaringizga yuboring.\n` +
-      `3️⃣ Ular bot orqali kanalga obuna bo'lib /start bosishi bilan sizga ${REFERRAL_REWARD} 💎 qo'shiladi.\n` +
+      `3️⃣ Ular bot orqali kanalga obuna bo'lib /start bosishi bilan sizga ${settings.referralReward} 💎 qo'shiladi.\n` +
       `4️⃣ "💰 Hisobim" bo'limidan balansingizni kuzating.\n` +
       `5️⃣ Yetarli olmos to'plangach, "🏦 Almazni yechish" orqali so'rov yuboring.`
   );
 }
 
 async function paymentsChannelHandler(ctx) {
-  return ctx.reply(`📣 To'lovlar kanali\n\nBarcha tasdiqlangan to'lovlar shu yerda e'lon qilinadi:\nhttps://t.me/${PAYMENTS_CHANNEL}`);
+  const settings = await getSettings();
+  return ctx.reply(`📣 To'lovlar kanali\n\nBarcha tasdiqlangan to'lovlar shu yerda e'lon qilinadi:\nhttps://t.me/${settings.paymentsChannel}`);
 }
 
 async function supportHandler(ctx) {
