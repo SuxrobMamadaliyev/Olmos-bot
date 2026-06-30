@@ -1,8 +1,7 @@
 const User = require('./User');
 const { mainMenu, subscribeKeyboard } = require('./keyboards');
-const { isUserSubscribed } = require('./subscription');
+const { checkAllSubscriptions } = require('./subscription');
 
-const REQUIRED_CHANNEL = process.env.REQUIRED_CHANNEL;
 const REFERRAL_REWARD = Number(process.env.REFERRAL_REWARD || 250);
 
 async function startHandler(ctx) {
@@ -30,13 +29,13 @@ async function startHandler(ctx) {
     await user.save();
   }
 
-  // Majburiy obunani tekshirish
-  const subscribed = await isUserSubscribed(ctx, REQUIRED_CHANNEL);
+  // Majburiy obunani tekshirish (bir nechta kanal bo'lishi mumkin)
+  const { subscribed, missing } = await checkAllSubscriptions(ctx);
 
   if (!subscribed) {
     return ctx.reply(
-      `📢 Botdan foydalanish uchun avval kanalimizga obuna bo'ling:\n\nhttps://t.me/${REQUIRED_CHANNEL}\n\nObuna bo'lgach, "✅ Obuna bo'ldim" tugmasini bosing.`,
-      subscribeKeyboard(REQUIRED_CHANNEL)
+      `📢 Botdan foydalanish uchun quyidagi kanal(lar)ga obuna bo'ling:\n\nObuna bo'lgach, "✅ Obuna bo'ldim" tugmasini bosing.`,
+      subscribeKeyboard(missing)
     );
   }
 
@@ -51,10 +50,10 @@ async function startHandler(ctx) {
 // "✅ Obuna bo'ldim" tugmasi bosilganda
 async function checkSubscriptionHandler(ctx) {
   const telegramId = ctx.from.id;
-  const subscribed = await isUserSubscribed(ctx, REQUIRED_CHANNEL);
+  const { subscribed, missing } = await checkAllSubscriptions(ctx);
 
   if (!subscribed) {
-    return ctx.answerCbQuery('❌ Siz hali kanalga obuna bo\'lmagansiz!', { show_alert: true });
+    return ctx.answerCbQuery('❌ Siz hali barcha kanallarga obuna bo\'lmagansiz!', { show_alert: true });
   }
 
   const user = await User.findOne({ telegramId });
