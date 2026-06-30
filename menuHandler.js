@@ -1,4 +1,5 @@
 const User = require('./User');
+const { Markup } = require('telegraf');
 const { getSettings } = require('./settingsUtils');
 
 const BOT_USERNAME = process.env.BOT_USERNAME;
@@ -7,9 +8,13 @@ const SUPPORT_USERNAME = process.env.SUPPORT_USERNAME || 'admin';
 async function earnHandler(ctx) {
   const settings = await getSettings();
   const referralLink = `https://t.me/${BOT_USERNAME}?start=${ctx.from.id}`;
+  const shareText = `💎 Bizning bot orqali olmos ishlab oling! Mana mening referal havolam:`;
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
+
   return ctx.reply(
     `💎 Almaz ishlash\n\n🔗 Sizning referal havolangiz:👇\n\n${referralLink}\n\n` +
-      `⚡️Yuqoridagi referal havolangizni do'stlaringizga tarqating va har bir to'liq ro'yxatdan o'tgan referalingiz uchun ${settings.referralReward} 💎 hisobingizga qo'shiladi.✅`
+      `⚡️Yuqoridagi referal havolangizni do'stlaringizga tarqating va har bir to'liq ro'yxatdan o'tgan referalingiz uchun ${settings.referralReward} 💎 hisobingizga qo'shiladi.✅`,
+    Markup.inlineKeyboard([[Markup.button.url('📤 Do\'stlarga ulashish', shareUrl)]])
   );
 }
 
@@ -37,7 +42,7 @@ async function guideHandler(ctx) {
   const settings = await getSettings();
   return ctx.reply(
     `📚 Qo'llanma\n\n` +
-      `1️⃣ "💎 Ishlash" tugmasi orqali referal havolangizni oling.\n` +
+      `1️⃣ "💎 Almaz ishlash" tugmasi orqali referal havolangizni oling.\n` +
       `2️⃣ Havolani do'stlaringizga yuboring.\n` +
       `3️⃣ Ular bot orqali kanalga obuna bo'lib /start bosishi bilan sizga ${settings.referralReward} 💎 qo'shiladi.\n` +
       `4️⃣ "💰 Hisobim" bo'limidan balansingizni kuzating.\n` +
