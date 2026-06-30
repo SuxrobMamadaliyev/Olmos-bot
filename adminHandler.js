@@ -180,6 +180,34 @@ async function adminRejectAction(ctx) {
     .catch(() => {});
 }
 
+// 🚫 Ban berish
+async function adminBanAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('banScene');
+}
+
+// ✅ Banni olish
+async function adminUnbanAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('unbanScene');
+}
+
+// 📣 To'lovlar kanalini o'zgartirish
+async function adminPaymentsChannelAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('changePaymentsChannelScene');
+}
+
+// 💎 Referal narxini o'zgartirish
+async function adminReferralRewardAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('changeReferralRewardScene');
+}
+
 // 📤 Broadcast
 async function adminBroadcastAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
@@ -303,6 +331,10 @@ module.exports = {
   adminPendingAction,
   adminApproveAction,
   adminRejectAction,
+  adminBanAction,
+  adminUnbanAction,
+  adminPaymentsChannelAction,
+  adminReferralRewardAction,
   adminBroadcastAction,
   adminUsersAction,
   pendingHandler,
