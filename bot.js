@@ -75,7 +75,7 @@ function createBot() {
   bot.action('check_subscription', checkSubscriptionHandler);
 
   // Asosiy menyu tugmalari
-  bot.hears('💎 Ishlash', earnHandler);
+  bot.hears('💎 Almaz ishlash', earnHandler);
   bot.hears('💰 Hisobim', balanceHandler);
   bot.hears('📚 Qo\'llanma', guideHandler);
   bot.hears('📣 To\'lovlar kanali', paymentsChannelHandler);
