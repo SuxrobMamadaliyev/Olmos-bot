@@ -2,37 +2,22 @@ const { Telegraf, Scenes, session } = require('telegraf');
 
 const { startHandler, checkSubscriptionHandler, phoneContactHandler } = require('./startHandler');
 const {
-  earnHandler,
-  balanceHandler,
-  guideHandler,
-  paymentsChannelHandler,
-  supportHandler,
+  earnHandler, balanceHandler, guideHandler, paymentsChannelHandler, supportHandler,
 } = require('./menuHandler');
 const {
   isAdmin,
-  adminPanelHandler,
-  adminBackAction,
-  adminStatsAction,
-  adminChannelsAction,
-  adminChannelAddAction,
-  adminChannelDeleteAction,
-  adminPendingAction,
-  adminApproveAction,
-  adminRejectAction,
-  adminBanAction,
-  adminUnbanAction,
-  adminAddDiamondsAction,
-  adminRemoveDiamondsAction,
-  adminPaymentsChannelAction,
-  adminReferralRewardAction,
-  adminBroadcastAction,
-  adminUsersAction,
-  pendingHandler,
-  approveHandler,
-  rejectHandler,
-  broadcastHandler,
+  adminPanelHandler, adminBackAction, adminStatsAction,
+  adminChannelsAction, adminChannelAddAction, adminChannelDeleteAction,
+  adminPendingAction, adminApproveAction, adminRejectAction,
+  adminBanAction, adminUnbanAction,
+  adminAddDiamondsAction, adminRemoveDiamondsAction,
+  adminMinWithdrawAction, adminPaymentsChannelAction, adminReferralRewardAction,
+  adminBroadcastAction, adminUsersAction,
+  pendingHandler, approveHandler, rejectHandler, broadcastHandler,
 } = require('./adminHandler');
 const User = require('./User');
+const { mainMenu } = require('./keyboards');
+
 const withdrawScene = require('./withdrawScene');
 const addChannelScene = require('./addChannelScene');
 const broadcastScene = require('./broadcastScene');
@@ -40,23 +25,18 @@ const banScene = require('./banScene');
 const unbanScene = require('./unbanScene');
 const addDiamondsScene = require('./addDiamondsScene');
 const removeDiamondsScene = require('./removeDiamondsScene');
+const changeMinWithdrawScene = require('./changeMinWithdrawScene');
 const changePaymentsChannelScene = require('./changePaymentsChannelScene');
 const changeReferralRewardScene = require('./changeReferralRewardScene');
-const { mainMenu } = require('./keyboards');
 
 function createBot() {
   const bot = new Telegraf(process.env.BOT_TOKEN);
 
   const stage = new Scenes.Stage([
-    withdrawScene,
-    addChannelScene,
-    broadcastScene,
-    banScene,
-    unbanScene,
-    addDiamondsScene,
-    removeDiamondsScene,
-    changePaymentsChannelScene,
-    changeReferralRewardScene,
+    withdrawScene, addChannelScene, broadcastScene,
+    banScene, unbanScene,
+    addDiamondsScene, removeDiamondsScene,
+    changeMinWithdrawScene, changePaymentsChannelScene, changeReferralRewardScene,
   ]);
   bot.use(session());
   bot.use(stage.middleware());
@@ -77,8 +57,6 @@ function createBot() {
   // /start
   bot.start(startHandler);
   bot.action('check_subscription', checkSubscriptionHandler);
-
-  // Telefon raqamini qabul qilish
   bot.on('contact', phoneContactHandler);
 
   // Asosiy menyu
@@ -88,9 +66,12 @@ function createBot() {
   bot.hears('📣 To\'lovlar kanali', paymentsChannelHandler);
   bot.hears('📧 Murojaat', supportHandler);
   bot.hears('🏦 Almazni yechish', (ctx) => ctx.scene.enter('withdrawScene'));
-  bot.hears('◀️ Orqaga', (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu));
+  bot.hears('◀️ Orqaga', (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu(isAdmin(ctx.from.id))));
 
-  // Admin buyruq va inline panel
+  // "⚙️ Admin panel" tugmasi asosiy menyudan
+  bot.hears('⚙️ Admin panel', adminPanelHandler);
+
+  // Admin inline panel
   bot.command('admin', adminPanelHandler);
   bot.action('admin_back', adminBackAction);
   bot.action('admin_stats', adminStatsAction);
@@ -104,12 +85,13 @@ function createBot() {
   bot.action('admin_unban', adminUnbanAction);
   bot.action('admin_add_diamonds', adminAddDiamondsAction);
   bot.action('admin_remove_diamonds', adminRemoveDiamondsAction);
+  bot.action('admin_min_withdraw', adminMinWithdrawAction);
   bot.action('admin_payments_channel', adminPaymentsChannelAction);
   bot.action('admin_referral_reward', adminReferralRewardAction);
   bot.action('admin_broadcast', adminBroadcastAction);
   bot.action('admin_users', adminUsersAction);
 
-  // Eski matnli admin buyruqlari (moslik uchun)
+  // Eski matnli buyruqlar
   bot.command('pending', pendingHandler);
   bot.command('broadcast', broadcastHandler);
   bot.hears(/^\/approve_/, approveHandler);
