@@ -1,6 +1,6 @@
 const { Telegraf, Scenes, session } = require('telegraf');
 
-const { startHandler, checkSubscriptionHandler } = require('./startHandler');
+const { startHandler, checkSubscriptionHandler, phoneContactHandler } = require('./startHandler');
 const {
   earnHandler,
   balanceHandler,
@@ -21,6 +21,8 @@ const {
   adminRejectAction,
   adminBanAction,
   adminUnbanAction,
+  adminAddDiamondsAction,
+  adminRemoveDiamondsAction,
   adminPaymentsChannelAction,
   adminReferralRewardAction,
   adminBroadcastAction,
@@ -36,6 +38,8 @@ const addChannelScene = require('./addChannelScene');
 const broadcastScene = require('./broadcastScene');
 const banScene = require('./banScene');
 const unbanScene = require('./unbanScene');
+const addDiamondsScene = require('./addDiamondsScene');
+const removeDiamondsScene = require('./removeDiamondsScene');
 const changePaymentsChannelScene = require('./changePaymentsChannelScene');
 const changeReferralRewardScene = require('./changeReferralRewardScene');
 const { mainMenu } = require('./keyboards');
@@ -49,16 +53,17 @@ function createBot() {
     broadcastScene,
     banScene,
     unbanScene,
+    addDiamondsScene,
+    removeDiamondsScene,
     changePaymentsChannelScene,
     changeReferralRewardScene,
   ]);
   bot.use(session());
   bot.use(stage.middleware());
 
-  // Bloklangan foydalanuvchilarni botdan foydalanishdan to'xtatish
+  // Bloklangan foydalanuvchilarni to'xtatish
   bot.use(async (ctx, next) => {
     if (!ctx.from || isAdmin(ctx.from.id)) return next();
-
     const user = await User.findOne({ telegramId: ctx.from.id });
     if (user && user.isBlocked) {
       if (ctx.callbackQuery) {
@@ -66,15 +71,17 @@ function createBot() {
       }
       return ctx.reply('🚫 Siz botdan foydalanishdan bloklangansiz.');
     }
-
     return next();
   });
 
-  // /start va referal
+  // /start
   bot.start(startHandler);
   bot.action('check_subscription', checkSubscriptionHandler);
 
-  // Asosiy menyu tugmalari
+  // Telefon raqamini qabul qilish
+  bot.on('contact', phoneContactHandler);
+
+  // Asosiy menyu
   bot.hears('💎 Almaz ishlash', earnHandler);
   bot.hears('💰 Hisobim', balanceHandler);
   bot.hears('📚 Qo\'llanma', guideHandler);
@@ -83,7 +90,7 @@ function createBot() {
   bot.hears('🏦 Almazni yechish', (ctx) => ctx.scene.enter('withdrawScene'));
   bot.hears('◀️ Orqaga', (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu));
 
-  // Admin buyrug'i va inline panel
+  // Admin buyruq va inline panel
   bot.command('admin', adminPanelHandler);
   bot.action('admin_back', adminBackAction);
   bot.action('admin_stats', adminStatsAction);
@@ -95,12 +102,14 @@ function createBot() {
   bot.action(/^admin_reject_(.+)$/, adminRejectAction);
   bot.action('admin_ban', adminBanAction);
   bot.action('admin_unban', adminUnbanAction);
+  bot.action('admin_add_diamonds', adminAddDiamondsAction);
+  bot.action('admin_remove_diamonds', adminRemoveDiamondsAction);
   bot.action('admin_payments_channel', adminPaymentsChannelAction);
   bot.action('admin_referral_reward', adminReferralRewardAction);
   bot.action('admin_broadcast', adminBroadcastAction);
   bot.action('admin_users', adminUsersAction);
 
-  // Eski matnli admin buyruqlari (moslik uchun saqlangan)
+  // Eski matnli admin buyruqlari (moslik uchun)
   bot.command('pending', pendingHandler);
   bot.command('broadcast', broadcastHandler);
   bot.hears(/^\/approve_/, approveHandler);
