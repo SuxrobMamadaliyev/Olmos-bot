@@ -4,6 +4,7 @@ const Settings = require('./Settings');
 const DEFAULTS = {
   paymentsChannel: (process.env.PAYMENTS_CHANNEL || process.env.REQUIRED_CHANNEL || 'your_channel').replace('@', ''),
   referralReward: Number(process.env.REFERRAL_REWARD || 250),
+  minWithdraw: Number(process.env.MIN_WITHDRAW || 1000),
 };
 
 let cache = null;
