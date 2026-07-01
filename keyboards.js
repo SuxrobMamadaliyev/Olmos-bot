@@ -30,6 +30,10 @@ const adminMainKeyboard = Markup.inlineKeyboard([
     Markup.button.callback('🚫 Ban berish', 'admin_ban'),
     Markup.button.callback('✅ Banni olish', 'admin_unban'),
   ],
+  [
+    Markup.button.callback('➕ Olmos qo\'shish', 'admin_add_diamonds'),
+    Markup.button.callback('➖ Olmos ayirish', 'admin_remove_diamonds'),
+  ],
   [Markup.button.callback('📣 To\'lovlar kanalini o\'zgartirish', 'admin_payments_channel')],
   [Markup.button.callback('💎 Referal narxini o\'zgartirish', 'admin_referral_reward')],
   [Markup.button.callback('📤 Xabar yuborish (broadcast)', 'admin_broadcast')],
