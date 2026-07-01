@@ -1,10 +1,15 @@
 const { Markup } = require('telegraf');
 
-const mainMenu = Markup.keyboard([
-  ['💎 Almaz ishlash', '💰 Hisobim'],
-  ['🏦 Almazni yechish', '📚 Qo\'llanma'],
-  ['📣 To\'lovlar kanali', '📧 Murojaat'],
-]).resize();
+// Admin bo'lsa "⚙️ Admin panel" tugmasi ko'rinadi
+function mainMenu(isAdminUser = false) {
+  const rows = [
+    ['💎 Almaz ishlash', '💰 Hisobim'],
+    ['🏦 Almazni yechish', '📚 Qo\'llanma'],
+    ['📣 To\'lovlar kanali', '📧 Murojaat'],
+  ];
+  if (isAdminUser) rows.push(['⚙️ Admin panel']);
+  return Markup.keyboard(rows).resize();
+}
 
 const backMenu = Markup.keyboard([['◀️ Orqaga']]).resize();
 
@@ -36,6 +41,7 @@ const adminMainKeyboard = Markup.inlineKeyboard([
   ],
   [Markup.button.callback('📣 To\'lovlar kanalini o\'zgartirish', 'admin_payments_channel')],
   [Markup.button.callback('💎 Referal narxini o\'zgartirish', 'admin_referral_reward')],
+  [Markup.button.callback('💸 Minimal yechishni o\'zgartirish', 'admin_min_withdraw')],
   [Markup.button.callback('📤 Xabar yuborish (broadcast)', 'admin_broadcast')],
   [Markup.button.callback('👥 Foydalanuvchilar', 'admin_users')],
 ]);
