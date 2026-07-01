@@ -180,6 +180,20 @@ async function adminRejectAction(ctx) {
     .catch(() => {});
 }
 
+// ➕ Olmos qo'shish
+async function adminAddDiamondsAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('addDiamondsScene');
+}
+
+// ➖ Olmos ayirish
+async function adminRemoveDiamondsAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('removeDiamondsScene');
+}
+
 // 🚫 Ban berish
 async function adminBanAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
@@ -192,6 +206,13 @@ async function adminUnbanAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
   await ctx.answerCbQuery();
   return ctx.scene.enter('unbanScene');
+}
+
+// 💸 Minimal yechishni o'zgartirish
+async function adminMinWithdrawAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('changeMinWithdrawScene');
 }
 
 // 📣 To'lovlar kanalini o'zgartirish
@@ -333,6 +354,9 @@ module.exports = {
   adminRejectAction,
   adminBanAction,
   adminUnbanAction,
+  adminAddDiamondsAction,
+  adminRemoveDiamondsAction,
+  adminMinWithdrawAction,
   adminPaymentsChannelAction,
   adminReferralRewardAction,
   adminBroadcastAction,
