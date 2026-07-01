@@ -6,14 +6,17 @@ const userSchema = new mongoose.Schema(
     username: { type: String, default: null },
     firstName: { type: String, default: null },
 
-    balance: { type: Number, default: 0 }, // joriy olmos balansi
-    totalEarned: { type: Number, default: 0 }, // umumiy yig'ilgan olmos (statistika uchun)
+    phone: { type: String, default: null },           // telefon raqami (+998...)
+    phoneVerified: { type: Boolean, default: false }, // telefon tasdiqlangan?
+
+    balance: { type: Number, default: 0 },
+    totalEarned: { type: Number, default: 0 },
     referralsCount: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
 
-    referredBy: { type: Number, default: null }, // kim taklif qilgan (telegramId)
-    isSubscribed: { type: Boolean, default: false }, // majburiy kanalga obuna holati
-    rewardGranted: { type: Boolean, default: false }, // referal mukofoti berilganmi
+    referredBy: { type: Number, default: null },
+    isSubscribed: { type: Boolean, default: false },
+    rewardGranted: { type: Boolean, default: false },
 
     isBlocked: { type: Boolean, default: false },
 
