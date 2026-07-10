@@ -26,6 +26,7 @@ async function startHandler(ctx) {
   } else {
     user.username = username;
     user.firstName = firstName;
+    if (user.botBlocked) user.botBlocked = false;
     await user.save();
   }
 
@@ -96,6 +97,19 @@ async function phoneContactHandler(ctx) {
 
   const user = await User.findOne({ telegramId: ctx.from.id });
   if (!user) return ctx.reply('Iltimos, /start bosing.');
+
+  // Multiakk cheklash: bitta telefon raqami faqat bitta akkauntga bog'lanadi
+  const phoneOwner = await User.findOne({
+    phone,
+    phoneVerified: true,
+    telegramId: { $ne: ctx.from.id },
+  });
+  if (phoneOwner) {
+    return ctx.reply(
+      `❌ Bu telefon raqami allaqachon boshqa Telegram akkauntda ro'yxatdan o'tgan.\n\n` +
+      `Har bir telefon raqami faqat bitta akkaunt uchun ishlatilishi mumkin. Referal mukofoti berilmaydi.`,
+    );
+  }
 
   user.phone = phone;
   user.phoneVerified = true;
