@@ -17,6 +17,7 @@ const {
 } = require('./adminHandler');
 const User = require('./User');
 const { mainMenu } = require('./keyboards');
+const { applyLeavePenalty, clearBotBlockedFlag } = require('./referralPenalty');
 
 const withdrawScene = require('./withdrawScene');
 const addChannelScene = require('./addChannelScene');
@@ -52,6 +53,23 @@ function createBot() {
       return ctx.reply('🚫 Siz botdan foydalanishdan bloklangansiz.');
     }
     return next();
+  });
+
+  // Foydalanuvchi botni bloklab/o'chirib tashlashini yoki qayta ochishini kuzatish
+  bot.on('my_chat_member', async (ctx) => {
+    try {
+      const update = ctx.myChatMember;
+      if (!update || ctx.chat.type !== 'private') return;
+
+      const status = update.new_chat_member.status;
+      if (status === 'kicked' || status === 'left') {
+        await applyLeavePenalty(update.chat.id, ctx.telegram);
+      } else if (status === 'member') {
+        await clearBotBlockedFlag(update.chat.id);
+      }
+    } catch (err) {
+      console.error('my_chat_member xatosi:', err);
+    }
   });
 
   // /start
