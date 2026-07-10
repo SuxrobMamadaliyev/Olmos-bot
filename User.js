@@ -18,7 +18,10 @@ const userSchema = new mongoose.Schema(
     isSubscribed: { type: Boolean, default: false },
     rewardGranted: { type: Boolean, default: false },
 
-    isBlocked: { type: Boolean, default: false },
+    isBlocked: { type: Boolean, default: false }, // admin tomonidan ban qilingan
+
+    botBlocked: { type: Boolean, default: false },     // botni bloklagan/o'chirib tashlagan
+    leftPenaltyApplied: { type: Boolean, default: false }, // jarima allaqachon qo'llanildimi
 
     createdAt: { type: Date, default: Date.now },
   },
