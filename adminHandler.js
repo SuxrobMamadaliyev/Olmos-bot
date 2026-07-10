@@ -4,27 +4,48 @@ const Channel = require('./Channel');
 const { isAdmin } = require('./adminUtils');
 const { adminMainKeyboard, adminChannelsKeyboard, adminBackKeyboard } = require('./keyboards');
 
-const ADMIN_PANEL_TEXT = '🛠 *Admin panel*\n\nKerakli bo\'limni tanlang 👇';
+// HTML rejimida maxsus belgilarni ekranlash. Markdown o'rniga HTML ishlatamiz,
+// chunki kanal/foydalanuvchi username'laridagi "_" kabi belgilar legacy Markdown
+// parserini buzib, xabarni butunlay yuborilmay qoldirishi mumkin edi (jim xato).
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Har doim ishlaydigan answerCbQuery - eskirgan callback query funksiyani
+// to'liq to'xtatib qo'ymasligi uchun himoyalangan.
+async function safeAnswerCbQuery(ctx, ...args) {
+  try {
+    await ctx.answerCbQuery(...args);
+  } catch (err) {
+    console.error('answerCbQuery xatosi:', err.message);
+  }
+}
+
+const ADMIN_PANEL_TEXT_HTML = '🛠 <b>Admin panel</b>\n\nKerakli bo\'limni tanlang 👇';
 
 // /admin - asosiy admin panel
 async function adminPanelHandler(ctx) {
   if (!isAdmin(ctx.from.id)) return;
-  return ctx.reply(ADMIN_PANEL_TEXT, { parse_mode: 'Markdown', ...adminMainKeyboard });
+  return ctx.reply(ADMIN_PANEL_TEXT_HTML, { parse_mode: 'HTML', ...adminMainKeyboard });
 }
 
 // "◀️ Orqaga" -> admin bosh menyu
 async function adminBackAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
-  await ctx.answerCbQuery();
-  return ctx.editMessageText(ADMIN_PANEL_TEXT, { parse_mode: 'Markdown', ...adminMainKeyboard }).catch(() =>
-    ctx.reply(ADMIN_PANEL_TEXT, { parse_mode: 'Markdown', ...adminMainKeyboard })
-  );
+  await safeAnswerCbQuery(ctx);
+  return ctx.editMessageText(ADMIN_PANEL_TEXT_HTML, { parse_mode: 'HTML', ...adminMainKeyboard }).catch((err) => {
+    console.error('adminBackAction xatosi:', err.message);
+    return ctx.reply(ADMIN_PANEL_TEXT_HTML, { parse_mode: 'HTML', ...adminMainKeyboard });
+  });
 }
 
 // 📊 Statistika
 async function adminStatsAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
-  await ctx.answerCbQuery();
+  await safeAnswerCbQuery(ctx);
 
   const totalUsers = await User.countDocuments();
   const totalDiamonds = await User.aggregate([{ $group: { _id: null, sum: { $sum: '$balance' } } }]);
@@ -38,7 +59,7 @@ async function adminStatsAction(ctx) {
   const channelsCount = await Channel.countDocuments();
 
   const text =
-    `📊 *Statistika*\n\n` +
+    `📊 <b>Statistika</b>\n\n` +
     `👥 Jami foydalanuvchilar: ${totalUsers}\n` +
     `🚫 Bloklangan: ${blockedCount}\n` +
     `💎 Foydalanuvchilardagi joriy balans: ${totalDiamonds[0]?.sum || 0}\n` +
@@ -47,26 +68,44 @@ async function adminStatsAction(ctx) {
     `✅ Tasdiqlangan to'lovlar: ${approvedSum[0]?.sum || 0} 💎\n` +
     `📡 Majburiy kanallar soni: ${channelsCount}`;
 
-  return ctx.editMessageText(text, { parse_mode: 'Markdown', ...adminBackKeyboard }).catch(() =>
-    ctx.reply(text, { parse_mode: 'Markdown', ...adminBackKeyboard })
-  );
+  return ctx.editMessageText(text, { parse_mode: 'HTML', ...adminBackKeyboard }).catch((err) => {
+    console.error('adminStatsAction xatosi:', err.message);
+    return ctx.reply(text, { parse_mode: 'HTML', ...adminBackKeyboard });
+  });
 }
 
 // 📡 Majburiy kanallar ro'yxati
+function buildChannelsText(channels) {
+  return channels.length === 0
+    ? `📡 <b>Majburiy kanallar</b>\n\nHozircha majburiy kanal qo'shilmagan.`
+    : `📡 <b>Majburiy kanallar</b>\n\nO'chirish uchun kanal nomini bosing 👇\n\n` +
+      channels
+        .map((c, i) => `${i + 1}. ${escapeHtml(c.title || c.username)} (${escapeHtml(c.username)})`)
+        .join('\n');
+}
+
 async function adminChannelsAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
-  await ctx.answerCbQuery();
+  await safeAnswerCbQuery(ctx);
 
-  const channels = await Channel.find().sort({ addedAt: 1 });
-  const text =
-    channels.length === 0
-      ? `📡 *Majburiy kanallar*\n\nHozircha majburiy kanal qo'shilmagan.`
-      : `📡 *Majburiy kanallar*\n\nO'chirish uchun kanal nomini bosing 👇\n\n` +
-        channels.map((c, i) => `${i + 1}. ${c.title || c.username} (${c.username})`).join('\n');
+  let channels;
+  try {
+    channels = await Channel.find().sort({ addedAt: 1 });
+  } catch (err) {
+    console.error('Channel.find() xatosi:', err);
+    return ctx.reply('❌ Kanallar ro\'yxatini olishda xatolik yuz berdi. Serverdagi loglarni tekshiring.');
+  }
+
+  const text = buildChannelsText(channels);
 
   return ctx
-    .editMessageText(text, { parse_mode: 'Markdown', ...adminChannelsKeyboard(channels) })
-    .catch(() => ctx.reply(text, { parse_mode: 'Markdown', ...adminChannelsKeyboard(channels) }));
+    .editMessageText(text, { parse_mode: 'HTML', ...adminChannelsKeyboard(channels) })
+    .catch((err) => {
+      console.error('adminChannelsAction editMessageText xatosi:', err.message);
+      return ctx.reply(text, { parse_mode: 'HTML', ...adminChannelsKeyboard(channels) }).catch((err2) => {
+        console.error('adminChannelsAction reply xatosi:', err2.message);
+      });
+    });
 }
 
 // ➕ Kanal qo'shish
@@ -80,19 +119,25 @@ async function adminChannelAddAction(ctx) {
 async function adminChannelDeleteAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
   const id = ctx.match[1];
-  await Channel.findByIdAndDelete(id);
-  await ctx.answerCbQuery('✅ Kanal o\'chirildi');
+
+  try {
+    await Channel.findByIdAndDelete(id);
+  } catch (err) {
+    console.error('Channel.findByIdAndDelete xatosi:', err);
+  }
+  await safeAnswerCbQuery(ctx, '✅ Kanal o\'chirildi');
 
   const channels = await Channel.find().sort({ addedAt: 1 });
-  const text =
-    channels.length === 0
-      ? `📡 *Majburiy kanallar*\n\nHozircha majburiy kanal qo'shilmagan.`
-      : `📡 *Majburiy kanallar*\n\nO'chirish uchun kanal nomini bosing 👇\n\n` +
-        channels.map((c, i) => `${i + 1}. ${c.title || c.username} (${c.username})`).join('\n');
+  const text = buildChannelsText(channels);
 
   return ctx
-    .editMessageText(text, { parse_mode: 'Markdown', ...adminChannelsKeyboard(channels) })
-    .catch(() => ctx.reply(text, { parse_mode: 'Markdown', ...adminChannelsKeyboard(channels) }));
+    .editMessageText(text, { parse_mode: 'HTML', ...adminChannelsKeyboard(channels) })
+    .catch((err) => {
+      console.error('adminChannelDeleteAction editMessageText xatosi:', err.message);
+      return ctx.reply(text, { parse_mode: 'HTML', ...adminChannelsKeyboard(channels) }).catch((err2) => {
+        console.error('adminChannelDeleteAction reply xatosi:', err2.message);
+      });
+    });
 }
 
 // ⏳ Kutilayotgan so'rovlar
@@ -239,23 +284,24 @@ async function adminBroadcastAction(ctx) {
 // 👥 Foydalanuvchilar (so'nggi 10 ta)
 async function adminUsersAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
-  await ctx.answerCbQuery();
+  await safeAnswerCbQuery(ctx);
 
   const totalUsers = await User.countDocuments();
   const lastUsers = await User.find().sort({ createdAt: -1 }).limit(10);
 
   const text =
-    `👥 *Foydalanuvchilar*\n\nJami: ${totalUsers}\n\nSo'nggi 10 ta:\n\n` +
+    `👥 <b>Foydalanuvchilar</b>\n\nJami: ${totalUsers}\n\nSo'nggi 10 ta:\n\n` +
     lastUsers
       .map(
         (u, i) =>
-          `${i + 1}. @${u.username || 'nomaʼlum'} (${u.telegramId}) — ${u.balance} 💎${u.isBlocked ? ' 🚫' : ''}`
+          `${i + 1}. @${escapeHtml(u.username || 'nomaʼlum')} (${u.telegramId}) — ${u.balance} 💎${u.isBlocked ? ' 🚫' : ''}`
       )
       .join('\n');
 
-  return ctx
-    .editMessageText(text, { parse_mode: 'Markdown', ...adminBackKeyboard })
-    .catch(() => ctx.reply(text, { parse_mode: 'Markdown', ...adminBackKeyboard }));
+  return ctx.editMessageText(text, { parse_mode: 'HTML', ...adminBackKeyboard }).catch((err) => {
+    console.error('adminUsersAction xatosi:', err.message);
+    return ctx.reply(text, { parse_mode: 'HTML', ...adminBackKeyboard });
+  });
 }
 
 // /pending - matnli buyruq (eski usul, moslik uchun)
