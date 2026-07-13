@@ -16,7 +16,8 @@ const {
   pendingHandler, approveHandler, rejectHandler, broadcastHandler,
 } = require('./adminHandler');
 const User = require('./User');
-const { mainMenu } = require('./keyboards');
+const { mainMenu, subscribeKeyboard } = require('./keyboards');
+const { checkAllSubscriptions } = require('./subscription');
 const { applyLeavePenalty, clearBotBlockedFlag } = require('./referralPenalty');
 
 const withdrawScene = require('./withdrawScene');
@@ -29,6 +30,21 @@ const removeDiamondsScene = require('./removeDiamondsScene');
 const changeMinWithdrawScene = require('./changeMinWithdrawScene');
 const changePaymentsChannelScene = require('./changePaymentsChannelScene');
 const changeReferralRewardScene = require('./changeReferralRewardScene');
+
+// Asosiy menyu tugmalaridan foydalanishdan oldin majburiy obunani qayta tekshirish
+// (masalan, admin yangi majburiy kanal qo'shgan bo'lsa)
+async function requireSubscription(ctx, next) {
+  if (isAdmin(ctx.from.id)) return next();
+
+  const { subscribed, missing } = await checkAllSubscriptions(ctx);
+  if (!subscribed) {
+    return ctx.reply(
+      `📢 Botdan foydalanish uchun quyidagi kanal(lar)ga obuna bo'ling:\n\nObuna bo'lgach, "✅ Obuna bo'ldim" tugmasini bosing.`,
+      subscribeKeyboard(missing)
+    );
+  }
+  return next();
+}
 
 function createBot() {
   const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -77,14 +93,14 @@ function createBot() {
   bot.action('check_subscription', checkSubscriptionHandler);
   bot.on('contact', phoneContactHandler);
 
-  // Asosiy menyu
-  bot.hears('💎 Almaz ishlash', earnHandler);
-  bot.hears('💰 Hisobim', balanceHandler);
-  bot.hears('📚 Qo\'llanma', guideHandler);
-  bot.hears('📣 To\'lovlar kanali', paymentsChannelHandler);
-  bot.hears('📧 Murojaat', supportHandler);
-  bot.hears('🏦 Almazni yechish', (ctx) => ctx.scene.enter('withdrawScene'));
-  bot.hears('◀️ Orqaga', (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu(isAdmin(ctx.from.id))));
+  // Asosiy menyu (har bir tugma bosilganda majburiy obuna qayta tekshiriladi)
+  bot.hears('💎 Almaz ishlash', requireSubscription, earnHandler);
+  bot.hears('💰 Hisobim', requireSubscription, balanceHandler);
+  bot.hears('📚 Qo\'llanma', requireSubscription, guideHandler);
+  bot.hears('📣 To\'lovlar kanali', requireSubscription, paymentsChannelHandler);
+  bot.hears('📧 Murojaat', requireSubscription, supportHandler);
+  bot.hears('🏦 Almazni yechish', requireSubscription, (ctx) => ctx.scene.enter('withdrawScene'));
+  bot.hears('◀️ Orqaga', requireSubscription, (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu(isAdmin(ctx.from.id))));
 
   // "⚙️ Admin panel" tugmasi asosiy menyudan
   bot.hears('⚙️ Admin panel', adminPanelHandler);
