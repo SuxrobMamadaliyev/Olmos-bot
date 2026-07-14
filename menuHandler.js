@@ -1,6 +1,7 @@
 const User = require('./User');
 const { Markup } = require('telegraf');
 const { getSettings } = require('./settingsUtils');
+const PromoCode = require('./PromoCode');
 
 const BOT_USERNAME = process.env.BOT_USERNAME;
 const SUPPORT_USERNAME = process.env.SUPPORT_USERNAME || 'admin';
@@ -59,10 +60,54 @@ async function supportHandler(ctx) {
   return ctx.reply(`📧 Murojaat\n\nSavol va takliflar uchun: @${SUPPORT_USERNAME}`);
 }
 
+// Foydalanuvchi "🎁 Promokod" tugmasini bosganda
+async function promoMenuHandler(ctx) {
+  return ctx.reply(
+    `🎁 Promokod\n\nPromokod kodini yuboring 👇`,
+    Markup.keyboard([['❌ Bekor qilish']]).resize()
+  );
+}
+
+// Foydalanuvchi promokod matnini yuborganda
+async function promoCodeHandler(ctx) {
+  const code = ctx.message.text.trim().toUpperCase();
+
+  const promo = await PromoCode.findOne({ code });
+  if (!promo) return ctx.reply('❌ Bunday promokod topilmadi.');
+
+  if (!promo.isActive || promo.usedCount >= promo.limit)
+    return ctx.reply('⛔️ Bu promokod allaqachon tugagan!');
+
+  if (promo.usedBy.includes(ctx.from.id))
+    return ctx.reply('❗️ Siz bu promokodni allaqachon ishlatgansiz.');
+
+  const user = await User.findOne({ telegramId: ctx.from.id });
+  if (!user) return ctx.reply('❗️ Avval /start bosing.');
+  if (user.isBlocked) return ctx.reply('🚫 Siz botdan foydalanishdan bloklangansiz.');
+
+  user.balance += promo.amount;
+  user.totalEarned += promo.amount;
+  await user.save();
+
+  promo.usedBy.push(ctx.from.id);
+  promo.usedCount += 1;
+  if (promo.usedCount >= promo.limit) promo.isActive = false;
+  await promo.save();
+
+  const { isAdmin } = require('./adminUtils');
+  const { mainMenu } = require('./keyboards');
+  return ctx.reply(
+    `✅ Promokod qabul qilindi!\n\n💎 Hisobingizga <b>${promo.amount} 💎</b> qo'shildi!\n📊 Joriy balansingiz: <b>${user.balance} 💎</b>`,
+    { parse_mode: 'HTML', ...mainMenu(isAdmin(ctx.from.id)) }
+  );
+}
+
 module.exports = {
   earnHandler,
   balanceHandler,
   guideHandler,
   paymentsChannelHandler,
   supportHandler,
+  promoMenuHandler,
+  promoCodeHandler,
 };
