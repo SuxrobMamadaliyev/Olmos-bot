@@ -4,8 +4,9 @@ const { Markup } = require('telegraf');
 function mainMenu(isAdminUser = false) {
   const rows = [
     ['💎 Almaz ishlash', '💰 Hisobim'],
-    ['🏦 Almazni yechish', '📚 Qo\'llanma'],
-    ['📣 To\'lovlar kanali', '📧 Murojaat'],
+    ['🏦 Almazni yechish', '🎁 Promokod'],
+    ['📚 Qo\'llanma', '📣 To\'lovlar kanali'],
+    ['📧 Murojaat'],
   ];
   if (isAdminUser) rows.push(['⚙️ Admin panel']);
   return Markup.keyboard(rows).resize();
