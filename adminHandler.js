@@ -1,8 +1,10 @@
 const User = require('./User');
 const Withdraw = require('./Withdraw');
 const Channel = require('./Channel');
+const PromoCode = require('./PromoCode');
 const { isAdmin } = require('./adminUtils');
 const { adminMainKeyboard, adminChannelsKeyboard, adminBackKeyboard } = require('./keyboards');
+const { buildPromoText, buildPromoKeyboard } = require('./promoUtils');
 
 // HTML rejimida maxsus belgilarni ekranlash. Markdown o'rniga HTML ishlatamiz,
 // chunki kanal/foydalanuvchi username'laridagi "_" kabi belgilar legacy Markdown
@@ -274,6 +276,68 @@ async function adminReferralRewardAction(ctx) {
   return ctx.scene.enter('changeReferralRewardScene');
 }
 
+// 🎁 Promokod yaratish
+async function adminAddPromoAction(ctx) {
+  if (!isAdmin(ctx.from.id)) return;
+  await ctx.answerCbQuery();
+  return ctx.scene.enter('addPromoScene');
+}
+
+// 🎁 Foydalanuvchi kanaldagi "Promokodni olish" tugmasini bosganda ishlaydi
+async function promoClaimAction(ctx) {
+  const code = ctx.match[1];
+
+  const promo = await PromoCode.findOne({ code });
+  if (!promo) {
+    return ctx.answerCbQuery('❌ Promokod topilmadi.', { show_alert: true });
+  }
+
+  if (!promo.isActive || promo.usedCount >= promo.limit) {
+    return ctx.answerCbQuery('⛔️ Bu promokod allaqachon tugagan!', { show_alert: true });
+  }
+
+  if (promo.usedBy.includes(ctx.from.id)) {
+    return ctx.answerCbQuery('❗️ Siz bu promokodni allaqachon ishlatgansiz.', { show_alert: true });
+  }
+
+  const user = await User.findOne({ telegramId: ctx.from.id });
+  if (!user) {
+    return ctx.answerCbQuery('❗️ Avval botni ishga tushiring: /start', { show_alert: true });
+  }
+
+  if (user.isBlocked) {
+    return ctx.answerCbQuery('🚫 Siz botdan foydalanishdan bloklangansiz.', { show_alert: true });
+  }
+
+  // Balansni yangilash
+  user.balance += promo.amount;
+  user.totalEarned += promo.amount;
+  await user.save();
+
+  // Promokodni yangilash
+  promo.usedBy.push(ctx.from.id);
+  promo.usedCount += 1;
+  if (promo.usedCount >= promo.limit) {
+    promo.isActive = false;
+  }
+  await promo.save();
+
+  await ctx.answerCbQuery(`✅ Sizga ${promo.amount} 💎 qo'shildi!`, { show_alert: true });
+
+  // Kanaldagi xabarni yangilash (limit va holatni yangilash)
+  const text = buildPromoText(promo);
+  const keyboard = buildPromoKeyboard(promo);
+  await ctx.editMessageText(text, { parse_mode: 'HTML', ...keyboard }).catch((err) => {
+    console.error('promoClaimAction editMessageText xatosi:', err.message);
+  });
+
+  await ctx.telegram
+    .sendMessage(user.telegramId, `🎁 "${promo.code}" promokodi orqali <b>${promo.amount} 💎</b> hisobingizga qo'shildi!`, {
+      parse_mode: 'HTML',
+    })
+    .catch(() => {});
+}
+
 // 📤 Broadcast
 async function adminBroadcastAction(ctx) {
   if (!isAdmin(ctx.from.id)) return;
@@ -407,6 +471,8 @@ module.exports = {
   adminReferralRewardAction,
   adminBroadcastAction,
   adminUsersAction,
+  adminAddPromoAction,
+  promoClaimAction,
   pendingHandler,
   approveHandler,
   rejectHandler,
