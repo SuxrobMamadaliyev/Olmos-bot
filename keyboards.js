@@ -42,6 +42,7 @@ const adminMainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('📣 To\'lovlar kanalini o\'zgartirish', 'admin_payments_channel')],
   [Markup.button.callback('💎 Referal narxini o\'zgartirish', 'admin_referral_reward')],
   [Markup.button.callback('💸 Minimal yechishni o\'zgartirish', 'admin_min_withdraw')],
+  [Markup.button.callback('🎁 Promokod yaratish', 'admin_add_promo')],
   [Markup.button.callback('📤 Xabar yuborish (broadcast)', 'admin_broadcast')],
   [Markup.button.callback('👥 Foydalanuvchilar', 'admin_users')],
 ]);
