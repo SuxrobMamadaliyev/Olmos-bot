@@ -3,7 +3,7 @@ const { Markup } = require('telegraf');
 // Promokod postining matnini yasaydi (kanal uchun)
 function buildPromoText(promo) {
   const statusLine = promo.isActive
-    ? `✅ Olish uchun pastdagi tugmani bosing!`
+    ? `✅ Aktiv`
     : `⛔️ Bu promokod tugadi!`;
 
   return (
@@ -15,12 +15,9 @@ function buildPromoText(promo) {
   );
 }
 
-// Promokod postining klaviaturasini yasaydi (faol bo'lsa tugma bilan, bo'lmasa tugmasiz)
+// Promokod postining klaviaturasi — tugmasiz
 function buildPromoKeyboard(promo) {
-  if (!promo.isActive) return { reply_markup: { inline_keyboard: [] } };
-  return Markup.inlineKeyboard([
-    [Markup.button.callback('🎁 Promokodni olish', `promo_claim_${promo.code}`)],
-  ]);
+  return { reply_markup: { inline_keyboard: [] } };
 }
 
 // Tasodifiy promokod matni yaratadi (masalan: 6 ta belgidan iborat)
