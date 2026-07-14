@@ -13,6 +13,7 @@ const {
   adminAddDiamondsAction, adminRemoveDiamondsAction,
   adminMinWithdrawAction, adminPaymentsChannelAction, adminReferralRewardAction,
   adminBroadcastAction, adminUsersAction,
+  adminAddPromoAction, promoClaimAction,
   pendingHandler, approveHandler, rejectHandler, broadcastHandler,
 } = require('./adminHandler');
 const User = require('./User');
@@ -30,6 +31,7 @@ const removeDiamondsScene = require('./removeDiamondsScene');
 const changeMinWithdrawScene = require('./changeMinWithdrawScene');
 const changePaymentsChannelScene = require('./changePaymentsChannelScene');
 const changeReferralRewardScene = require('./changeReferralRewardScene');
+const addPromoScene = require('./addPromoScene');
 
 // Asosiy menyu tugmalaridan foydalanishdan oldin majburiy obunani qayta tekshirish
 // (masalan, admin yangi majburiy kanal qo'shgan bo'lsa)
@@ -54,6 +56,7 @@ function createBot() {
     banScene, unbanScene,
     addDiamondsScene, removeDiamondsScene,
     changeMinWithdrawScene, changePaymentsChannelScene, changeReferralRewardScene,
+    addPromoScene,
   ]);
   bot.use(session());
   bot.use(stage.middleware());
@@ -124,6 +127,10 @@ function createBot() {
   bot.action('admin_referral_reward', adminReferralRewardAction);
   bot.action('admin_broadcast', adminBroadcastAction);
   bot.action('admin_users', adminUsersAction);
+  bot.action('admin_add_promo', adminAddPromoAction);
+
+  // Kanaldagi "🎁 Promokodni olish" tugmasi (admin bo'lishi shart emas)
+  bot.action(/^promo_claim_(.+)$/, promoClaimAction);
 
   // Eski matnli buyruqlar
   bot.command('pending', pendingHandler);
