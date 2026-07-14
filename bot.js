@@ -3,6 +3,7 @@ const { Telegraf, Scenes, session } = require('telegraf');
 const { startHandler, checkSubscriptionHandler, phoneContactHandler } = require('./startHandler');
 const {
   earnHandler, balanceHandler, guideHandler, paymentsChannelHandler, supportHandler,
+  promoMenuHandler, promoCodeHandler,
 } = require('./menuHandler');
 const {
   isAdmin,
@@ -103,7 +104,12 @@ function createBot() {
   bot.hears('📣 To\'lovlar kanali', requireSubscription, paymentsChannelHandler);
   bot.hears('📧 Murojaat', requireSubscription, supportHandler);
   bot.hears('🏦 Almazni yechish', requireSubscription, (ctx) => ctx.scene.enter('withdrawScene'));
+  bot.hears('🎁 Promokod', requireSubscription, promoMenuHandler);
+  bot.hears('❌ Bekor qilish', requireSubscription, (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu(isAdmin(ctx.from.id))));
   bot.hears('◀️ Orqaga', requireSubscription, (ctx) => ctx.reply('Asosiy menyu 👇', mainMenu(isAdmin(ctx.from.id))));
+
+  // Foydalanuvchi promokod kodini yuborganda (3-20 ta harf/raqam)
+  bot.hears(/^[A-Z0-9_-]{3,20}$/i, requireSubscription, promoCodeHandler);
 
   // "⚙️ Admin panel" tugmasi asosiy menyudan
   bot.hears('⚙️ Admin panel', adminPanelHandler);
