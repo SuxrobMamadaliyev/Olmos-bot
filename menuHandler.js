@@ -94,6 +94,22 @@ async function promoCodeHandler(ctx) {
   if (promo.usedCount >= promo.limit) promo.isActive = false;
   await promo.save();
 
+  // Kanal postini yangilash
+  if (promo.channelChatId && promo.channelMessageId) {
+    const { buildPromoText, buildPromoKeyboard } = require('./promoUtils');
+    try {
+      await ctx.telegram.editMessageText(
+        promo.channelChatId,
+        promo.channelMessageId,
+        undefined,
+        buildPromoText(promo),
+        { parse_mode: 'HTML', ...buildPromoKeyboard(promo) }
+      );
+    } catch (editErr) {
+      console.error('Kanal postini tahrirlashda xato:', editErr.message);
+    }
+  }
+
   const { isAdmin } = require('./adminUtils');
   const { mainMenu } = require('./keyboards');
   return ctx.reply(
